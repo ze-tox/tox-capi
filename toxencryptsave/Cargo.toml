@@ -1,0 +1,20 @@
+[package]
+name = "toxencryptsave-capi"
+version = "0.1.0"
+authors = ["quininer kel <quininer@live.com>"]
+build = "build.rs"
+
+[lib]
+name = "toxencryptsave"
+path = "src/lib.rs"
+crate-type = ["dylib"]
+
+[dependencies]
+libc = "0.2"
+
+[dependencies.tox]
+git = "https://github.com/quininer/tox.git"
+branch = "encryptsave"
+
+[build-dependencies]
+rusty-cheddar = "0.3"
