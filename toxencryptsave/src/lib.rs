@@ -139,3 +139,32 @@ pub unsafe extern fn tox_pass_decrypt(
         }
     }
 }
+
+/** This retrieves the salt used to encrypt the given data, which can then be passed to
+    derive_key_with_salt to produce the same key as was previously used. Any encrpyted
+    data with this module can be used as input.
+
+    returns true if magic number matches
+    success does not say anything about the validity of the data, only that data of
+    the appropriate size was copied
+*/
+#[no_mangle]
+pub unsafe extern fn tox_get_salt(data: *const u8, salt: *mut u8) -> bool {
+    let data = slice::from_raw_parts(data, MAGIC_LENGTH + SALT_LENGTH);
+    match get_salt(data) {
+        Some(output) => {
+            let output = output.as_ref();
+            ptr::copy(output.as_ptr(), salt, output.len());
+            true
+        },
+        None => false
+    }
+}
+
+/** Determines whether or not the given data is encrypted (by checking the magic number)
+*/
+#[no_mangle]
+pub unsafe extern fn tox_is_data_encrypted(data: *const u8) -> bool {
+    let data = slice::from_raw_parts(data, MAGIC_LENGTH);
+    is_encrypted(data)
+}

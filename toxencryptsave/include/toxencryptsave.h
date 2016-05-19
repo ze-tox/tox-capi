@@ -78,6 +78,20 @@ bool tox_pass_encrypt(uint8_t const* data, size_t data_len, uint8_t const* passp
 */
 bool tox_pass_decrypt(uint8_t const* data, size_t data_len, uint8_t const* passphrase, size_t pplength, uint8_t* out, TOX_ERR_DECRYPTION* error);
 
+/** This retrieves the salt used to encrypt the given data, which can then be passed to
+    derive_key_with_salt to produce the same key as was previously used. Any encrpyted
+    data with this module can be used as input.
+
+    returns true if magic number matches
+    success does not say anything about the validity of the data, only that data of
+    the appropriate size was copied
+*/
+bool tox_get_salt(uint8_t const* data, uint8_t* salt);
+
+/** Determines whether or not the given data is encrypted (by checking the magic number)
+*/
+bool tox_is_data_encrypted(uint8_t const* data);
+
 
 
 #ifdef __cplusplus
