@@ -6,11 +6,11 @@ build = "build.rs"
 
 [lib]
 name = "toxencryptsave"
-path = "src/lib.rs"
 crate-type = ["dylib"]
 
 [dependencies]
 libc = "0.2"
+sodiumoxide = "0.0.10"
 
 [dependencies.tox]
 git = "https://github.com/quininer/tox.git"
