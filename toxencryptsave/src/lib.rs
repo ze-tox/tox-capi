@@ -76,11 +76,11 @@ pub unsafe extern fn tox_pass_encrypt(
             ptr::write(error, TOX_ERR_ENCRYPTION::TOX_ERR_ENCRYPTION_OK);
             true
         },
-        Err(Encryption::Null) => {
+        Err(EncryptionError::Null) => {
             ptr::write(error, TOX_ERR_ENCRYPTION::TOX_ERR_ENCRYPTION_NULL);
             false
         },
-        Err(Encryption::KeyDerivation(_)) => {
+        Err(EncryptionError::KeyDerivation(_)) => {
             ptr::write(error, TOX_ERR_ENCRYPTION::TOX_ERR_ENCRYPTION_KEY_DERIVATION_FAILED);
             false
         }
@@ -112,23 +112,23 @@ pub unsafe extern fn tox_pass_decrypt(
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_OK);
             true
         },
-        Err(Decryption::Null) => {
+        Err(DecryptionError::Null) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_NULL);
             false
         },
-        Err(Decryption::InvalidLength) => {
+        Err(DecryptionError::InvalidLength) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_INVALID_LENGTH);
             false
         },
-        Err(Decryption::BadFormat) => {
+        Err(DecryptionError::BadFormat) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_BAD_FORMAT);
             false
         },
-        Err(Decryption::KeyDerivation(_)) => {
+        Err(DecryptionError::KeyDerivation(_)) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_KEY_DERIVATION_FAILED);
             false
         },
-        Err(Decryption::Failed) => {
+        Err(DecryptionError::Failed) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_FAILED);
             false
         }
@@ -293,19 +293,19 @@ pub unsafe extern fn tox_pass_key_decrypt(
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_OK);
             true
         },
-        Err(Decryption::Null) => {
+        Err(DecryptionError::Null) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_NULL);
             false
         },
-        Err(Decryption::InvalidLength) => {
+        Err(DecryptionError::InvalidLength) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_INVALID_LENGTH);
             false
         },
-        Err(Decryption::BadFormat) => {
+        Err(DecryptionError::BadFormat) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_BAD_FORMAT);
             false
         },
-        Err(Decryption::Failed) => {
+        Err(DecryptionError::Failed) => {
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_FAILED);
             false
         },
