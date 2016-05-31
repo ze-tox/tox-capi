@@ -188,7 +188,7 @@ pub unsafe extern fn tox_derive_key_from_pass(
     error: *mut TOX_ERR_KEY_DERIVATION
 ) -> bool {
     let passphrase = slice::from_raw_parts(passphrase, pplength);
-    match PassKey::new(&passphrase).map(TOX_PASS_KEY) {
+    match PassKey::new(passphrase).map(TOX_PASS_KEY) {
         Ok(key) => {
             ptr::write(out_key, key);
             ptr::write(error, TOX_ERR_KEY_DERIVATION::TOX_ERR_KEY_DERIVATION_OK);
@@ -218,9 +218,9 @@ pub unsafe extern fn tox_derive_key_with_salt(
 ) -> bool {
     let passphrase = slice::from_raw_parts(passphrase, pplength);
     let salt = slice::from_raw_parts(salt, SALT_LENGTH);
-    match Salt::from_slice(&salt)
+    match Salt::from_slice(salt)
         .ok_or(KeyDerivationError::Null)
-        .and_then(|s| PassKey::with_salt(&passphrase, s))
+        .and_then(|s| PassKey::with_salt(passphrase, s))
         .map(TOX_PASS_KEY)
     {
         Ok(key) => {
@@ -257,7 +257,7 @@ pub unsafe extern fn tox_pass_key_encrypt(
 ) -> bool {
     let data = slice::from_raw_parts(data, data_len);
     let TOX_PASS_KEY(key) = ptr::read(key);
-    match key.encrypt(&data) {
+    match key.encrypt(data) {
         Ok(output) => {
             ptr::copy(output.as_ptr(), out, output.len());
             ptr::write(error, TOX_ERR_ENCRYPTION::TOX_ERR_ENCRYPTION_OK);
@@ -287,7 +287,7 @@ pub unsafe extern fn tox_pass_key_decrypt(
 ) -> bool {
     let data = slice::from_raw_parts(data, data_len);
     let TOX_PASS_KEY(key) = ptr::read(key);
-    match key.decrypt(&data) {
+    match key.decrypt(data) {
         Ok(output) => {
             ptr::copy(output.as_ptr(), out, output.len());
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_OK);
