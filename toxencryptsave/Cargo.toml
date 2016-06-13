@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["quininer kel <quininer@live.com>"]
 build = "build.rs"
 
+[profile.release]
+lto = true
+
 [lib]
 name = "toxencryptsave"
 crate-type = ["dylib"]
@@ -13,8 +16,7 @@ libc = "0.2"
 sodiumoxide = "0.0.10"
 
 [dependencies.tox]
-git = "https://github.com/quininer/tox.git"
-branch = "encryptsave"
+git = "https://github.com/zetok/tox.git"
 
 [build-dependencies]
 rusty-cheddar = "0.3"

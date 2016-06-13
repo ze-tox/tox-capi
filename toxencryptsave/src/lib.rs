@@ -7,7 +7,7 @@ extern crate sodiumoxide;
 use std::{ slice, ptr };
 use libc::size_t;
 use sodiumoxide::crypto::pwhash::Salt;
-use tox::toxencryptsave::encryptsave::*;
+use tox::toxencryptsave::*;
 
 
 #[repr(C)]

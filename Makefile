@@ -10,6 +10,7 @@ encryptsave:
 	cd tox$@; $(RC) $(RFLAGS)
 	cp tox$@/include/tox$@.h include/tox$@.h
 	cp tox$@/target/release/libtox$@.so libtox$@.so
+	strip libtox$@.so
 
 install: encryptsave
 	install -m644 include/toxencryptsave.h $(PREFIX)/include/toxencryptsave.h
