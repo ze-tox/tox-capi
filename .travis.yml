@@ -1,0 +1,39 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+
+os:
+  - linux
+  - osx
+
+branches:
+  except:
+    - test
+
+notifications:
+  irc:
+    channels: "chat.freenode.net#zetox"
+    template:
+      - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message} || Change view: %{compare_url}"
+    on_success: change
+    skip_join: true
+
+matrix:
+  allow_failures:
+  - rust: beta
+  - rust: nightly
+  - os: osx
+
+sudo: required
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then bash ./scripts/verify-commit-messages.sh "$TRAVIS_COMMIT_RANGE" ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then bash ./scripts/bootstrap-ubuntu-14-04.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash ./scripts/bootstrap-osx.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PKG_CONFIG_PATH=$HOME/installed_libsodium/lib/pkgconfig:$PKG_CONFIG_PATH ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export LD_LIBRARY_PATH=$HOME/installed_libsodium/lib:$LD_LIBRARY_PATH ; fi
+
+script:
+ - make
