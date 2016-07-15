@@ -1,4 +1,4 @@
-tox-capi [![Build Status](https://travis-ci.org/quininer/tox-capi.svg?branch=master)](https://travis-ci.org/quininer/tox-capi)
+tox-capi [![Build Status](https://travis-ci.org/ze-tox/tox-capi.svg?branch=master)](https://travis-ci.org/ze-tox/tox-capi)
 --------
 
 C API for [zetox], a [toxcore] implementation in Rust.
