@@ -9,7 +9,7 @@ lto = true
 
 [lib]
 name = "toxencryptsave"
-crate-type = ["dylib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 libc = "0.2"
