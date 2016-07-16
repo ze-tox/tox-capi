@@ -2,6 +2,7 @@ RC = cargo
 RFLAGS = build --release
 RCLEAN = clean
 PREFIX = /usr
+UNAME := $(shell uname)
 
 all: encryptsave
 
@@ -9,7 +10,14 @@ encryptsave:
 	test -e include || mkdir include
 	cd tox$@; $(RC) $(RFLAGS)
 	cp tox$@/include/tox$@.h include/tox$@.h
+
+ifeq ($(UNAME), Linux)
 	cp tox$@/target/release/libtox$@.so libtox$@.so
+endif
+ifeq ($(UNAME), Darwin)
+	cp tox$@/target/release/libtox$@.dylib libtox$@.dylib
+endif
+
 	strip libtox$@.so
 
 install: encryptsave
