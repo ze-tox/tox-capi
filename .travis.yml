@@ -20,10 +20,6 @@ notifications:
     on_success: change
     skip_join: true
 
-matrix:
-  allow_failures:
-  - rust: stable
-
 sudo: required
 
 before_install:
