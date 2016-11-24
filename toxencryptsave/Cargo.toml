@@ -9,11 +9,11 @@ lto = true
 
 [lib]
 name = "toxencryptsave"
-crate-type = ["cdylib"]
+crate-type = ["dylib", "staticlib"]
 
 [dependencies]
 libc = "0.2"
-sodiumoxide = "0.0.10"
+sodiumoxide = "0.0.12"
 
 [dependencies.tox]
 git = "https://github.com/zetok/tox.git"
