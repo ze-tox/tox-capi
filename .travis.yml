@@ -12,6 +12,11 @@ branches:
   except:
     - test
 
+matrix:
+  allow_failures:
+  - rust: beta
+  - rust: nightly
+
 notifications:
   irc:
     channels: "chat.freenode.net#zetox"
