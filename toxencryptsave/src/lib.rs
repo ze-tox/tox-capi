@@ -9,9 +9,41 @@ use libc::size_t;
 use sodiumoxide::crypto::pwhash::Salt;
 use tox::toxencryptsave::*;
 
+#[no_mangle]
+pub use tox::toxencryptsave::KEY_LENGTH as TOX_PASS_KEY_LENGTH;
+#[no_mangle]
+pub use tox::toxencryptsave::SALT_LENGTH as TOX_PASS_SALT_LENGTH;
+#[no_mangle]
+pub use tox::toxencryptsave::EXTRA_LENGTH as TOX_PASS_ENCRYPTION_EXTRA_LENGTH;
+
+
+/** The size of the key part of a pass-key
+*/
+#[no_mangle]
+pub extern fn tox_pass_key_length() -> u32 {
+    TOX_PASS_KEY_LENGTH as u32
+}
+
+/** The size of the salt part of a pass-key
+*/
+#[no_mangle]
+pub extern fn tox_pass_salt_length() -> u32 {
+    TOX_PASS_SALT_LENGTH as u32
+}
+
+/** The amount of additional data requierd to store any encrypted byte array.
+    Encrypting an array of N bytes requires N + TOX_PASS_ENCRYPTION_EXTRA_LENGTH
+    bytes in the encrypted byte array.
+*/
+#[no_mangle]
+pub extern fn tox_pass_encryption_extra_length() -> u32 {
+    TOX_PASS_ENCRYPTION_EXTRA_LENGTH as u32
+}
+
 
 #[repr(C)]
 pub enum TOX_ERR_KEY_DERIVATION {
+    /// The function returned successfully.
     TOX_ERR_KEY_DERIVATION_OK,
     ///  Some input data, or maybe the output pointer, was null.
     TOX_ERR_KEY_DERIVATION_NULL,
@@ -23,6 +55,7 @@ pub enum TOX_ERR_KEY_DERIVATION {
 
 #[repr(C)]
 pub enum TOX_ERR_ENCRYPTION {
+    /// The function returned successfully.
     TOX_ERR_ENCRYPTION_OK,
     /// Some input data, or maybe the output pointer, was null.
     TOX_ERR_ENCRYPTION_NULL,
@@ -36,6 +69,7 @@ pub enum TOX_ERR_ENCRYPTION {
 
 #[repr(C)]
 pub enum TOX_ERR_DECRYPTION {
+    /// The function returned successfully.
     TOX_ERR_DECRYPTION_OK,
     /// Some input data, or maybe the output pointer, was null.
     TOX_ERR_DECRYPTION_NULL,
@@ -53,26 +87,34 @@ pub enum TOX_ERR_DECRYPTION {
     TOX_ERR_DECRYPTION_FAILED
 }
 
-/** Encrypts the given data with the given passphrase. The output array must be
-    at least data_len + TOX_PASS_ENCRYPTION_EXTRA_LENGTH bytes long. This delegates
-    to tox_derive_key_from_pass and tox_pass_key_encrypt.
+/** Encrypts the given data with the given passphrase.
 
-    returns true on success
+    The output array must be at least `plaintext_len + TOX_PASS_ENCRYPTION_EXTRA_LENGTH`
+    bytes long. This delegates to tox_pass_key_derive and
+    tox_pass_key_encrypt.
+
+    @param plaintext A byte array of length `plaintext_len`.
+    @param plaintext_len The length of the plain text array. Bigger than 0.
+    @param passphrase The user-provided password.
+    @param passphrase_len The length of the password.
+    @param ciphertext The cipher text array to write the encrypted data to.
+
+    @return true on success.
 */
 #[no_mangle]
 pub unsafe extern fn tox_pass_encrypt(
-    data: *const u8,
-    data_len: size_t,
+    plaintext: *const u8,
+    plaintext_len: size_t,
     passphrase: *const u8,
-    pplength: size_t,
-    out: *mut u8,
+    passphrase_len: size_t,
+    ciphertext: *mut u8,
     error: *mut TOX_ERR_ENCRYPTION
 ) -> bool {
-    let data = slice::from_raw_parts(data, data_len);
-    let passphrase = slice::from_raw_parts(passphrase, pplength);
-    match pass_encrypt(data, passphrase) {
+    let plaintext = slice::from_raw_parts(plaintext, plaintext_len);
+    let passphrase = slice::from_raw_parts(passphrase, passphrase_len);
+    match pass_encrypt(plaintext, passphrase) {
         Ok(output) => {
-            ptr::copy(output.as_ptr(), out, output.len());
+            ptr::copy(output.as_ptr(), ciphertext, output.len());
             ptr::write(error, TOX_ERR_ENCRYPTION::TOX_ERR_ENCRYPTION_OK);
             true
         },
@@ -87,28 +129,33 @@ pub unsafe extern fn tox_pass_encrypt(
     }
 }
 
-/** Decrypts the given data with the given passphrase. The output array must be
-    at least data_len - TOX_PASS_ENCRYPTION_EXTRA_LENGTH bytes long. This delegates
-    to tox_pass_key_decrypt.
+/** Decrypts the given data with the given passphrase.
 
-    the output data has size data_length - TOX_PASS_ENCRYPTION_EXTRA_LENGTH
+    The output array must be at least `ciphertext_len - TOX_PASS_ENCRYPTION_EXTRA_LENGTH`
+    bytes long. This delegates to tox_pass_key_decrypt.
 
-    returns true on success
+    @param ciphertext A byte array of length `ciphertext_len`.
+    @param ciphertext_len The length of the cipher text array. At least TOX_PASS_ENCRYPTION_EXTRA_LENGTH.
+    @param passphrase The user-provided password.
+    @param passphrase_len The length of the password.
+    @param plaintext The plain text array to write the decrypted data to.
+
+    @return true on success.
 */
 #[no_mangle]
 pub unsafe extern fn tox_pass_decrypt(
-    data: *const u8,
-    data_len: size_t,
+    ciphertext: *const u8,
+    ciphertext_len: size_t,
     passphrase: *const u8,
-    pplength: size_t,
-    out: *mut u8,
+    passphrase_len: size_t,
+    plaintext: *mut u8,
     error: *mut TOX_ERR_DECRYPTION
 ) -> bool {
-    let data = slice::from_raw_parts(data, data_len);
-    let passphrase = slice::from_raw_parts(passphrase, pplength);
-    match pass_decrypt(data, passphrase) {
+    let ciphertext = slice::from_raw_parts(ciphertext, ciphertext_len);
+    let passphrase = slice::from_raw_parts(passphrase, passphrase_len);
+    match pass_decrypt(ciphertext, passphrase) {
         Ok(output) => {
-            ptr::copy(output.as_ptr(), out, output.len());
+            ptr::copy(output.as_ptr(), plaintext, output.len());
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_OK);
             true
         },
@@ -135,18 +182,28 @@ pub unsafe extern fn tox_pass_decrypt(
     }
 }
 
-/** This retrieves the salt used to encrypt the given data, which can then be passed to
-    derive_key_with_salt to produce the same key as was previously used. Any encrpyted
-    data with this module can be used as input.
+/** Retrieves the salt used to encrypt the given data.
 
-    returns true if magic number matches
-    success does not say anything about the validity of the data, only that data of
-    the appropriate size was copied
-*/
+    The retrieved salt can then be passed to tox_pass_key_derive_with_salt to
+    produce the same key as was previously used. Any data encrypted with this
+    module can be used as input.
+
+    The cipher text must be at least TOX_PASS_ENCRYPTION_EXTRA_LENGTH bytes in
+    length.
+
+    The salt must be TOX_PASS_SALT_LENGTH bytes in length.
+    If the passed byte arrays are smaller than required, the behaviour is
+    undefined.
+
+    Success does not say anything about the validity of the data, only that
+    data of the appropriate size was copied.
+
+    @return true on success.
+ */
 #[no_mangle]
-pub unsafe extern fn tox_get_salt(data: *const u8, salt: *mut u8) -> bool {
-    let data = slice::from_raw_parts(data, MAGIC_LENGTH + SALT_LENGTH);
-    match get_salt(data) {
+pub unsafe extern fn tox_get_salt(ciphertext: *const u8, salt: *mut u8) -> bool {
+    let ciphertext = slice::from_raw_parts(ciphertext, MAGIC_LENGTH + SALT_LENGTH);
+    match get_salt(ciphertext) {
         Some(Salt(output)) => {
             ptr::copy(output.as_ptr(), salt, output.len());
             true
@@ -155,42 +212,90 @@ pub unsafe extern fn tox_get_salt(data: *const u8, salt: *mut u8) -> bool {
     }
 }
 
-/** Determines whether or not the given data is encrypted (by checking the magic number)
-*/
+/** Determines whether or not the given data is encrypted by this module.
+
+    It does this check by verifying that the magic number is the one put in
+    place by the encryption functions.
+
+    The data must be at least TOX_PASS_ENCRYPTION_EXTRA_LENGTH bytes in length.
+    If the passed byte array is smaller than required, the behaviour is
+    undefined.
+
+    If the cipher text pointer is NULL, this function returns false.
+
+    @return true if the data is encrypted by this module.
+ */
 #[no_mangle]
 pub unsafe extern fn tox_is_data_encrypted(data: *const u8) -> bool {
     let data = slice::from_raw_parts(data, MAGIC_LENGTH);
     is_encrypted(data)
 }
 
-/** This key structure's internals should not be used by any client program, even
-    if they are straightforward here.
+/** This type represents a pass-key.
+
+    A pass-key and a password are two different concepts: a password is given
+    by the user in plain text. A pass-key is the generated symmetric key used
+    for encryption and decryption. It is derived from a salt and the user-
+    provided password.
+
+    The Tox_Pass_Key structure is hidden in the implementation. It can be
+    allocated using tox_pass_key_new and must be deallocated using
+    tox_pass_key_free.
 */
 #[repr(C)]
-pub struct TOX_PASS_KEY(PassKey);
+pub struct Tox_Pass_Key(PassKey);
 
-/** Generates a secret symmetric key from the given passphrase. out_key must be at least
-    TOX_PASS_KEY_LENGTH bytes long.
-    Be sure to not compromise the key! Only keep it in memory, do not write to disk.
-    The password is zeroed after key derivation.
-    The key should only be used with the other functions in this module, as it
-    includes a salt.
-    Note that this function is not deterministic; to derive the same key from a
-    password, you also must know the random salt that was used. See below.
 
-    returns true on success
+/** Create a new Tox_Pass_Key. The initial value of it is indeterminate. To
+    initialise it, use one of the derive_* functions below.
 */
 #[no_mangle]
-pub unsafe extern fn tox_derive_key_from_pass(
+pub extern fn tox_pass_key_new() -> *mut Tox_Pass_Key {
+    // TODO: remove with 0.2, since its API nullifies need to create PassKey twice
+    let pass = b"Can't have unsafe, empty PassKey, so create on with this pass";
+    Box::into_raw(
+        PassKey::new(pass)
+        .map(Tox_Pass_Key)
+        .map(Box::new)
+        .expect("Failed to allocate memory?")
+    )
+}
+
+/** Deallocate a Tox_Pass_Key. This function behaves like free(), so NULL is an
+    acceptable argument value.
+*/
+#[no_mangle]
+pub extern fn tox_pass_key_free(key: *mut Tox_Pass_Key) {
+    drop(key);
+}
+
+/** Generates a secret symmetric key from the given passphrase.
+
+    Be sure to not compromise the key! Only keep it in memory, do not write
+    it to disk.
+
+    Make sure to zero the password after key derivation.
+
+    Note that this function is not deterministic; to derive the same key from
+    a password, you also must know the random salt that was used. A
+    deterministic version of this function is tox_pass_key_derive_with_salt.
+
+    @param passphrase The user-provided password.
+    @param passphrase_len The length of the password.
+
+    @return true on success.
+*/
+#[no_mangle]
+pub unsafe extern fn tox_pass_key_derive(
+    key: *mut Tox_Pass_Key,
     passphrase: *const u8,
-    pplength: size_t,
-    out_key: *mut TOX_PASS_KEY,
+    passphrase_len: size_t,
     error: *mut TOX_ERR_KEY_DERIVATION
 ) -> bool {
-    let passphrase = slice::from_raw_parts(passphrase, pplength);
-    match PassKey::new(passphrase).map(TOX_PASS_KEY) {
-        Ok(key) => {
-            ptr::write(out_key, key);
+    let passphrase = slice::from_raw_parts(passphrase, passphrase_len);
+    match PassKey::new(passphrase).map(Tox_Pass_Key) {
+        Ok(key_new) => {
+            ptr::write(key, key_new);
             ptr::write(error, TOX_ERR_KEY_DERIVATION::TOX_ERR_KEY_DERIVATION_OK);
             true
         },
@@ -206,25 +311,30 @@ pub unsafe extern fn tox_derive_key_from_pass(
 }
 
 /** Same as above, except use the given salt for deterministic key derivation.
-    The salt must be TOX_PASS_SALT_LENGTH bytes in length.
+
+    @param passphrase The user-provided password.
+    @param passphrase_len The length of the password.
+    @param salt An array of at least TOX_PASS_SALT_LENGTH bytes.
+
+    @return true on success.
 */
 #[no_mangle]
 pub unsafe extern fn tox_derive_key_with_salt(
+    key: *mut Tox_Pass_Key,
     passphrase: *const u8,
-    pplength: size_t,
+    passphrase_len: size_t,
     salt: *const u8,
-    out_key: *mut TOX_PASS_KEY,
     error: *mut TOX_ERR_KEY_DERIVATION
 ) -> bool {
-    let passphrase = slice::from_raw_parts(passphrase, pplength);
+    let passphrase = slice::from_raw_parts(passphrase, passphrase_len);
     let salt = slice::from_raw_parts(salt, SALT_LENGTH);
     match Salt::from_slice(salt)
         .ok_or(KeyDerivationError::Null)
         .and_then(|s| PassKey::with_salt(passphrase, s))
-        .map(TOX_PASS_KEY)
+        .map(Tox_Pass_Key)
     {
-        Ok(key) => {
-            ptr::write(out_key, key);
+        Ok(key_new) => {
+            ptr::write(key, key_new);
             ptr::write(error, TOX_ERR_KEY_DERIVATION::TOX_ERR_KEY_DERIVATION_OK);
             true
         },
@@ -239,27 +349,31 @@ pub unsafe extern fn tox_derive_key_with_salt(
     }
 }
 
-/** Encrypt arbitrary with a key produced by tox_derive_key_*. The output
-    array must be at least data_len + TOX_PASS_ENCRYPTION_EXTRA_LENGTH bytes long.
-    key must be TOX_PASS_KEY_LENGTH bytes.
-    If you already have a symmetric key from somewhere besides this module, simply
-    call encrypt_data_symmetric in toxcore/crypto_core directly.
+/** Encrypt a plain text with a key produced by tox_pass_key_derive or
+    tox_pass_key_derive_with_salt.
 
-    returns true on success
-*/
+    The output array must be at least `plaintext_len + TOX_PASS_ENCRYPTION_EXTRA_LENGTH`
+    bytes long.
+
+    @param plaintext A byte array of length `plaintext_len`.
+    @param plaintext_len The length of the plain text array. Bigger than 0.
+    @param ciphertext The cipher text array to write the encrypted data to.
+
+    @return true on success.
+ */
 #[no_mangle]
 pub unsafe extern fn tox_pass_key_encrypt(
-    data: *const u8,
-    data_len: size_t,
-    key: *const TOX_PASS_KEY,
-    out: *mut u8,
+    key: *const Tox_Pass_Key,
+    plaintext: *const u8,
+    plaintext_len: size_t,
+    ciphertext: *mut u8,
     error: *mut TOX_ERR_ENCRYPTION
 ) -> bool {
-    let data = slice::from_raw_parts(data, data_len);
-    let TOX_PASS_KEY(key) = ptr::read(key);
-    match key.encrypt(data) {
+    let plaintext = slice::from_raw_parts(plaintext, plaintext_len);
+    let Tox_Pass_Key(key) = ptr::read(key);
+    match key.encrypt(plaintext) {
         Ok(output) => {
-            ptr::copy(output.as_ptr(), out, output.len());
+            ptr::copy(output.as_ptr(), ciphertext, output.len());
             ptr::write(error, TOX_ERR_ENCRYPTION::TOX_ERR_ENCRYPTION_OK);
             true
         },
@@ -270,26 +384,28 @@ pub unsafe extern fn tox_pass_key_encrypt(
     }
 }
 
-/** This is the inverse of tox_pass_key_encrypt, also using only keys produced by
-    tox_derive_key_from_pass.
+/** This is the inverse of tox_pass_key_encrypt, also using only keys produced
+    by tox_pass_key_derive or tox_pass_key_derive_with_salt.
 
-    the output data has size data_length - TOX_PASS_ENCRYPTION_EXTRA_LENGTH
+    @param ciphertext A byte array of length `ciphertext_len`.
+    @param ciphertext_len The length of the cipher text array. At least TOX_PASS_ENCRYPTION_EXTRA_LENGTH.
+    @param plaintext The plain text array to write the decrypted data to.
 
-    returns true on success
+    @return true on success.
 */
 #[no_mangle]
 pub unsafe extern fn tox_pass_key_decrypt(
-    data: *const u8,
-    data_len: size_t,
-    key: *const TOX_PASS_KEY,
-    out: *mut u8,
+    key: *const Tox_Pass_Key,
+    ciphertext: *const u8,
+    ciphertext_len: size_t,
+    plaintext: *mut u8,
     error: *mut TOX_ERR_DECRYPTION
 ) -> bool {
-    let data = slice::from_raw_parts(data, data_len);
-    let TOX_PASS_KEY(key) = ptr::read(key);
-    match key.decrypt(data) {
+    let ciphertext = slice::from_raw_parts(ciphertext, ciphertext_len);
+    let Tox_Pass_Key(key) = ptr::read(key);
+    match key.decrypt(ciphertext) {
         Ok(output) => {
-            ptr::copy(output.as_ptr(), out, output.len());
+            ptr::copy(output.as_ptr(), plaintext, output.len());
             ptr::write(error, TOX_ERR_DECRYPTION::TOX_ERR_DECRYPTION_OK);
             true
         },
